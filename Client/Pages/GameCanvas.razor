@@ -1,0 +1,61 @@
+﻿@page "/game"
+@inject IJSRuntime JSRuntime
+
+<h3>GameCanvas</h3>
+
+<BECanvas Width="@canvasWidth" Height="@canvasHeight" @ref="_canvasRef"></BECanvas>
+
+@code {
+    private Canvas2DContext _context;
+
+    protected BECanvasComponent _canvasRef;
+
+    public event EventHandler<BrowserDimension> Resize;
+    public int canvasWidth = 400;
+    public int canvasHeight = 400;
+    public BrowserDimension CanvasSize = new BrowserDimension(400,400);
+    public async Task<BrowserDimension> GetWindowDimensions()
+    {
+        return await JSRuntime.InvokeAsync<BrowserDimension>("getWindowDimensions");
+    }
+    public class BrowserDimension
+    {
+        public int width { get; set; }
+        public int height { get; set; }
+        public BrowserDimension(int width, int height){ this.width = width;this.height = height; }
+    }
+    [JSInvokable]
+    public async void SetCanvasSize()
+    {
+        this.CanvasSize = await CalcCanvasSize();
+        canvasWidth = CanvasSize.width;
+        canvasHeight = CanvasSize.height;
+        ShouldRender();
+    }
+    protected async Task<BrowserDimension> CalcCanvasSize()
+    {
+        BrowserDimension dim = await GetWindowDimensions();
+        return dim;
+    }
+    protected override Task OnInitializedAsync()
+    {
+        //nesahat nebo se to rozpadne
+        JSRuntime.InvokeVoidAsync("import", "_content/Blazor.Extensions.Canvas/blazor.extensions.canvas.js");
+        JSRuntime.InvokeVoidAsync("import", "_wwwroot/CanvasHelpers.js");
+        JSRuntime.InvokeVoidAsync("registerListener",DotNetObjectReference.Create(this));
+        return base.OnInitializedAsync();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        
+        ShouldRender();
+
+        this._context = await this._canvasRef.CreateCanvas2DAsync();
+        await this._context.SetFillStyleAsync("green");
+
+        await this._context.FillRectAsync(10, 100, 100, 100);
+
+        await this._context.SetFontAsync("48px serif");
+        await this._context.StrokeTextAsync("Hello Blazor!!!", 10, 100);
+    }
+}
