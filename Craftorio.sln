@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Craftorio.Client", "Client\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Craftorio.Shared", "Shared\Craftorio.Shared.csproj", "{DDF7325C-0CCE-4EB5-8538-C85FB88B5128}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CraftorioTest", "CraftorioTest\CraftorioTest.csproj", "{D316DBEC-A26C-47D4-ADA5-1F28CB2C7562}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CraftorioTest", "CraftorioTest\CraftorioTest.csproj", "{D316DBEC-A26C-47D4-ADA5-1F28CB2C7562}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

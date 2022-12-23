@@ -43,9 +43,20 @@ namespace Craftorio.Server.Controllers
             }
             string shash = ByteAdapter.ByteArrayToString(hash);
             
-            Session session = new Session(shash);
+            Session session = new Session(credentials.Username, shash);
             sessionList.Add(session);
             return session.sessionCookie;
+        }
+        public bool IsLogged(string username)
+        {
+            foreach(Session s in sessionList)
+            {
+                if(s.player.username == username)
+                {
+                    return true;
+                }
+            }
+            return false;
         }
     }
     public static class ByteAdapter

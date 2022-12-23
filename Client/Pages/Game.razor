@@ -1,0 +1,38 @@
+﻿@using Craftorio.Shared;
+@inject HttpClient http
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+@page "/game/{Username}"
+
+<h3>Game</h3>
+
+<nav class="d-flex flex-row bg-dark text-white">
+    @foreach(KeyValuePair<string,int> resource in resources)
+    {
+        <div class="d-flex btn-outline-info">
+            @resource.Key: @resource.Value
+        </div>
+    }
+    <div class="d-inline-flex m-2 p-2 border border-2 border-secondary bg-secondary ml-auto text-end">
+        @Username
+    </div>
+</nav>
+<div class="container-fluid bg-dark text-white">
+    <!--<TileResourceGenerator resource=null></TileResourceGenerator>-->
+</div>
+
+@code {
+    [Parameter]
+    public string Username { get; set; }
+    List<KeyValuePair<string, int>> resources = new List<KeyValuePair<string, int>>();
+    protected async override Task OnInitializedAsync()
+    {
+        HttpResponseMessage res = await http.PostAsJsonAsync("api/verify", Username);
+        string verifyRes = await res.Content.ReadAsStringAsync();
+        if(verifyRes != "OK")
+        {
+            Username += "[INVALID]";
+        }
+        base.OnInitialized();
+    }
+}

@@ -1,0 +1,23 @@
+﻿@using Craftorio.Shared;
+
+<div class="d-flex flex-column">
+    <div class="container d-flex flex-row">
+            <div class="flex-column">
+            <h3 class="px-2">@resource.ResourceName</h3>
+            <div>Generates @resource.OneGeneratesPerTick$ per tick</div>
+        </div>
+        <div class="flex-column">
+            <button class="btn btn-primary" @onclick="resource.TryBuyUpgrade">Upgrade for @resource.UpgradeCost $</button>
+        </div>
+    </div>
+    <div class="container flex-row">
+        <h4>Amount: @resource.AmountBought</h4>
+        <h4>Generating: @resource.GeneratingPerTick</h4>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public ResourceFactory resource{ get; set; } = new ResourceFactory();
+}
+

@@ -15,14 +15,16 @@ namespace Craftorio.Shared
         /// </summary>
         public string identificator { get; }
         public Cookie sessionCookie { get; }
+        public sPlayer player { get; }
         /// <summary>
         /// Creates a new session with given ID
         /// </summary>
         /// <param name="id"></param>
-        public Session(string id)
+        public Session(string username, string id)
         {
             this.identificator = id;
             this.sessionCookie = new Cookie("session", identificator);
+            this.player = new sPlayer(username);
         }
         public override string ToString()
         {
