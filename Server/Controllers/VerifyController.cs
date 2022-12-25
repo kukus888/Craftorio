@@ -8,18 +8,22 @@ namespace Craftorio.Server.Controllers
     [ApiController]
     public class VerifyController : ControllerBase
     {
+        private readonly ISessionController _sessionController;
+        public VerifyController(ISessionController sessionController) {
+            _sessionController = sessionController;
+        }
         [HttpPost]
         public ActionResult Post(string username)
         {
             if (true)
             {
-                SessionController sessionController = new SessionController();
-                if (sessionController.IsLogged(username)){
-                    return Content("OK");
+                if (_sessionController.IsLogged(username)){
+                    return StatusCode(200);
                 }
                 else
                 {
-                    return Content("NOK");
+                    //Unauthorized
+                    return StatusCode(401);
                 }
             }
             else

@@ -28,7 +28,12 @@ namespace Craftorio.Shared
         }
         public override string ToString()
         {
-            return $"Session {this.identificator}";
+            return $"{this.identificator}";
+        }
+        public class DuplicateSessionException : Exception
+        {
+            public string Message { get; set; }
+            public DuplicateSessionException(string? message):base(){ this.Message = message; }
         }
     }
 }

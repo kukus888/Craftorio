@@ -1,6 +1,6 @@
 ﻿@using Craftorio.Shared;
 @inject HttpClient http
-@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
 
 @page "/game/{Username}"
 
@@ -27,7 +27,8 @@
     List<KeyValuePair<string, int>> resources = new List<KeyValuePair<string, int>>();
     protected async override Task OnInitializedAsync()
     {
-        HttpResponseMessage res = await http.PostAsJsonAsync("api/verify", Username);
+        IEnumerable<string> sessionString = localStorage.Keys();
+        HttpResponseMessage res = await http.PostAsJsonAsync("api/verify", sessionString);
         string verifyRes = await res.Content.ReadAsStringAsync();
         if(verifyRes != "OK")
         {

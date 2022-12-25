@@ -4,17 +4,21 @@ using Microsoft.AspNetCore.Mvc;
 using System.Text.Json.Serialization;
 using System.Text.Json;
 using Microsoft.Extensions.Http;
+using Microsoft.AspNetCore.Components;
+using System.Net;
 
 namespace Craftorio.Server.Controllers
 {
     [ApiController]
-    [Route("api/login")]
+    [Microsoft.AspNetCore.Mvc.Route("api/login")]
     public class LoginController : ControllerBase
     {
+        private readonly ISessionController _sessionController;
         private readonly ILogger<LoginController> _logger;
-        public LoginController(ILogger<LoginController> logger)
+        public LoginController(ILogger<LoginController> logger, ISessionController sessionController)
         {
             _logger = logger;
+            _sessionController = sessionController;
         }
         [HttpGet]
         public string Get()
@@ -24,17 +28,23 @@ namespace Craftorio.Server.Controllers
         [HttpPost]
         public ActionResult Post(Credentials credentials)
         {
-            LoginDbConnector connector = new LoginDbConnector();
-            if (connector.Match(credentials))
+            try
             {
-                SessionController sessionController = new SessionController();
-                System.Net.Cookie sessionCookie = sessionController.Create(credentials);
-                Response.Cookies.Append(sessionCookie.Name, sessionCookie.Value);
-                return Content("OK");
-            }
-            else
+                LoginDbConnector connector = new LoginDbConnector();
+                if (connector.Match(credentials))
+                {
+                    System.Net.Cookie sessionCookie = _sessionController.Create(credentials);
+                    Response.Cookies.Append(sessionCookie.Name, sessionCookie.Value);
+                    return Content(sessionCookie.Value);
+                }
+                else
+                {
+                    //Unauth
+                    return StatusCode(401);
+                }
+            }catch(Session.DuplicateSessionException dupSessEx)
             {
-                return Content("NOK");
+                return StatusCode(409,"User already logged in, please log out from different computer.");
             }
         }
     }

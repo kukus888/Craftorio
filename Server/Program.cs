@@ -1,11 +1,15 @@
+using Craftorio.Server.Controllers;
+using Craftorio.Shared;
 using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 
+builder.Services.AddSingleton<ISessionController, SessionController>();
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
+builder.Services.AddMvc();
 
 var app = builder.Build();
 

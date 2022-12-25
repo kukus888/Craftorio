@@ -2,8 +2,9 @@
 @using System.Net.Http.Json
 @using System.Threading
 @using Craftorio.Shared
+@using System.Net
 @inject NavigationManager NavigationManager
-@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
 @inject HttpClient http
 
 @page "/Login"
@@ -22,8 +23,8 @@
         <button type="submit" class="btn">@loginBtnText</button>
     </p>
 </EditForm>
-<p hidden=@wrongPasswordHidden class="text-warning">
-    Wrong username and/or password.
+<p hidden=@showLoginErrMsg class="text-warning">
+    @loginErrorMsg
 </p>
 <p>
     This website uses cookies.
@@ -32,27 +33,36 @@
 
 @code {
     private string loginBtnText { get; set; } = "Login";
-    private bool wrongPasswordHidden { get; set; } = true;
+    private string loginErrorMsg { get; set; } = "Wrong username and/or password.";
+    private bool showLoginErrMsg { get; set; } = true;
 
     private Credentials credentials { get; set; } = Credentials.NullCredentials();
 
     private async void login(){
         loginBtnText = "Signing in...";
         HttpResponseMessage res = await http.PostAsJsonAsync("api/login", credentials);
-        string loginRes = await res.Content.ReadAsStringAsync();
-        if(loginRes == "OK"){
-            //login successful
+        if(res.StatusCode == HttpStatusCode.OK)
+        {
             loginBtnText = "Logged in! Please wait...";
-            NavigationManager.NavigateTo("/game/"+credentials.Username);
-        }else{
-            //wrong username and/or password
-            wrongPasswordHidden = false;
+            SaveCookie(await res.Content.ReadAsStringAsync());
+            NavigationManager.NavigateTo("/game/" + credentials.Username);
+        }
+        else if (res.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            //wrong username and/or password or other issue
+            showLoginErrMsg = false;
+            loginErrorMsg = "Wrong username and/or password.";
+            loginBtnText = "Login";
+        }
+        else
+        {
+            showLoginErrMsg = false;
+            loginErrorMsg = "Other error, please contact an administrator.";
             loginBtnText = "Login";
         }
         StateHasChanged();
     }
-    private async void SaveCookie(){
-        await localStorage.SetItemAsync("name", "John Smith");
-        var name = await localStorage.GetItemAsync<string>("name");
+    private async void SaveCookie(string cookieValue){
+        localStorage.SetItem("session", cookieValue);
     }
 }

@@ -4,10 +4,15 @@ using System.Security.Cryptography;
 
 namespace Craftorio.Server.Controllers
 {
+    public interface ISessionController
+    {
+        Cookie Create(Credentials credentials);
+        bool IsLogged(string username);
+    }
     /// <summary>
     /// Singleton responsible for session management
     /// </summary>
-    public class SessionController
+    public class SessionController : ISessionController
     {
         protected SessionController Instance { get; }
         private List<Session> sessionList { get; }
@@ -44,6 +49,14 @@ namespace Craftorio.Server.Controllers
             string shash = ByteAdapter.ByteArrayToString(hash);
             
             Session session = new Session(credentials.Username, shash);
+            //Check for Session collisions
+            foreach(Session s in sessionList)
+            {
+                if (s.ToString() == session.ToString())
+                {
+                    throw new Session.DuplicateSessionException("Cannot initialize more than one session.");
+                }
+            }
             sessionList.Add(session);
             return session.sessionCookie;
         }
