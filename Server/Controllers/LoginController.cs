@@ -20,11 +20,6 @@ namespace Craftorio.Server.Controllers
             _logger = logger;
             _sessionController = sessionController;
         }
-        [HttpGet]
-        public string Get()
-        {
-            return "haha";
-        }
         [HttpPost]
         public ActionResult Post(Credentials credentials)
         {
@@ -33,19 +28,49 @@ namespace Craftorio.Server.Controllers
                 LoginDbConnector connector = new LoginDbConnector();
                 if (connector.Match(credentials))
                 {
-                    System.Net.Cookie sessionCookie = _sessionController.Create(credentials);
-                    Response.Cookies.Append(sessionCookie.Name, sessionCookie.Value);
-                    return Content(sessionCookie.Value);
+                    return Content(_sessionController.Create(credentials));
                 }
                 else
                 {
                     //Unauth
                     return StatusCode(401);
                 }
-            }catch(Session.DuplicateSessionException dupSessEx)
+            }catch(DuplicateSessionException dupSessEx)
             {
                 return StatusCode(409,"User already logged in, please log out from different computer.");
             }
+        }
+    }
+    [ApiController]
+    [Microsoft.AspNetCore.Mvc.Route("api/logout")]
+    public class LogoutController : ControllerBase
+    {
+        private readonly ISessionController _sessionController;
+        public LogoutController(ISessionController sessionController)
+        {
+            _sessionController = sessionController;
+        }
+        /// <summary>
+        /// Called when user wants to log out
+        /// </summary>
+        /// <returns></returns>
+        [HttpPost]
+        public ActionResult Post(Session session)
+        {
+            //Checks the session token
+            try
+            {
+                _sessionController.IsLogged(session);
+            }
+            catch (ArgumentNullException ex)
+            {
+                //session is not logged, possibly someone messing with us?
+                //TODO: catch random ppl abusing API
+                return StatusCode(404);
+            }
+            //Logout the session
+            _sessionController.Logout(session);
+            return StatusCode(200);
         }
     }
 }

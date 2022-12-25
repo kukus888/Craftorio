@@ -5,35 +5,40 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Net.Http;
 using System.Net;
+using System.Text.Json.Serialization;
 
 namespace Craftorio.Shared
 {
     public class Session
     {
         /// <summary>
-        /// identificator used in cookie
+        /// identificator
         /// </summary>
-        public string identificator { get; }
-        public Cookie sessionCookie { get; }
-        public sPlayer player { get; }
+        public string sessionToken { get; }
+        public string username { get; }
         /// <summary>
-        /// Creates a new session with given ID
+        /// Creates a new session with given token
         /// </summary>
-        /// <param name="id"></param>
-        public Session(string username, string id)
+        /// <param name="_sessionToken"></param>
+        public Session(string _username, string _sessionToken)
         {
-            this.identificator = id;
-            this.sessionCookie = new Cookie("session", identificator);
-            this.player = new sPlayer(username);
+            this.username = _username;
+            this.sessionToken = _sessionToken;
         }
+        [JsonConstructor]
+        public Session() { }
         public override string ToString()
         {
-            return $"{this.identificator}";
+            return $"{this.sessionToken}";
         }
-        public class DuplicateSessionException : Exception
-        {
-            public string Message { get; set; }
-            public DuplicateSessionException(string? message):base(){ this.Message = message; }
-        }
+    }
+    public class DuplicateSessionException : Exception
+    {
+        public DuplicateSessionException(string? message) : base(message) { }
+    }
+    public class InvalidSessionException : Exception
+    {
+        public InvalidSessionException(string? message) : base(message) { }
+        public InvalidSessionException(string? message, Exception innerException) : base(message, innerException) { }
     }
 }

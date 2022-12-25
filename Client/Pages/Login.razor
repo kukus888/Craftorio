@@ -23,7 +23,7 @@
         <button type="submit" class="btn">@loginBtnText</button>
     </p>
 </EditForm>
-<p hidden=@showLoginErrMsg class="text-warning">
+<p hidden=@hideLoginErrMsg class="text-warning">
     @loginErrorMsg
 </p>
 <p>
@@ -34,7 +34,7 @@
 @code {
     private string loginBtnText { get; set; } = "Login";
     private string loginErrorMsg { get; set; } = "Wrong username and/or password.";
-    private bool showLoginErrMsg { get; set; } = true;
+    private bool hideLoginErrMsg { get; set; } = true;
 
     private Credentials credentials { get; set; } = Credentials.NullCredentials();
 
@@ -50,13 +50,18 @@
         else if (res.StatusCode == HttpStatusCode.Unauthorized)
         {
             //wrong username and/or password or other issue
-            showLoginErrMsg = false;
+            hideLoginErrMsg = false;
             loginErrorMsg = "Wrong username and/or password.";
             loginBtnText = "Login";
         }
-        else
+        else if(res.StatusCode == HttpStatusCode.Conflict)
         {
-            showLoginErrMsg = false;
+            hideLoginErrMsg = false;
+            loginErrorMsg = "You are already logged in elsewhere! Please logout from another device.";
+            loginBtnText = "Login";
+        }else
+        {
+            hideLoginErrMsg = false;
             loginErrorMsg = "Other error, please contact an administrator.";
             loginBtnText = "Login";
         }

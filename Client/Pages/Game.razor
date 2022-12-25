@@ -1,6 +1,11 @@
-﻿@using Craftorio.Shared;
+﻿@using System.Net.Http
+@using System.Net.Http.Json
+@using System.Threading
+@using Craftorio.Shared
+@using System.Net
 @inject HttpClient http
 @inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
+@implements IDisposable
 
 @page "/game/{Username}"
 
@@ -24,16 +29,25 @@
 @code {
     [Parameter]
     public string Username { get; set; }
+    private string sessionToken{ get; set; }
     List<KeyValuePair<string, int>> resources = new List<KeyValuePair<string, int>>();
     protected async override Task OnInitializedAsync()
     {
-        IEnumerable<string> sessionString = localStorage.Keys();
-        HttpResponseMessage res = await http.PostAsJsonAsync("api/verify", sessionString);
+        sessionToken = localStorage.GetItemAsString("session");
+        sessionToken = sessionToken.Substring(1, sessionToken.Length - 2);
+        Session s = new Session(Username, sessionToken);
+        string username = Username + " " + sessionToken;
+        HttpResponseMessage res = await http.PostAsJsonAsync("api/verify", username);
+        //HttpResponseMessage res = await http.PostAsJsonAsync<Session>("api/verify", s);
         string verifyRes = await res.Content.ReadAsStringAsync();
-        if(verifyRes != "OK")
+        if (verifyRes != "OK")
         {
             Username += "[INVALID]";
         }
         base.OnInitialized();
+    }
+    public async void Dispose()
+    {
+        HttpResponseMessage res = await http.PostAsJsonAsync("api/logout", new Session(Username, sessionToken));
     }
 }
