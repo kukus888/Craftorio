@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Player xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <resourceManager>
+    <resources>
+      <Resource>
+        <ResourceName>Money</ResourceName>
+        <Amount>120875</Amount>
+      </Resource>
+    </resources>
+  </resourceManager>
+  <resourceFactoryManager>
+    <resourceFactories>
+      <ResourceFactory>
+        <resourceName>Forest</resourceName>
+        <upgradeCost>3945</upgradeCost>
+        <amountBought>25</amountBought>
+        <oneGeneratesPerTick>2</oneGeneratesPerTick>
+        <generatingPerTick>50</generatingPerTick>
+      </ResourceFactory>
+      <ResourceFactory>
+        <resourceName>Sawmill</resourceName>
+        <upgradeCost>5481</upgradeCost>
+        <amountBought>18</amountBought>
+        <oneGeneratesPerTick>10</oneGeneratesPerTick>
+        <generatingPerTick>180</generatingPerTick>
+      </ResourceFactory>
+      <ResourceFactory>
+        <resourceName>Paper mill</resourceName>
+        <upgradeCost>26946</upgradeCost>
+        <amountBought>21</amountBought>
+        <oneGeneratesPerTick>20</oneGeneratesPerTick>
+        <generatingPerTick>420</generatingPerTick>
+      </ResourceFactory>
+      <ResourceFactory>
+        <resourceName>Furniture store</resourceName>
+        <upgradeCost>86658</upgradeCost>
+        <amountBought>20</amountBought>
+        <oneGeneratesPerTick>85</oneGeneratesPerTick>
+        <generatingPerTick>1700</generatingPerTick>
+      </ResourceFactory>
+    </resourceFactories>
+  </resourceFactoryManager>
+  <username>aaa</username>
+</Player>

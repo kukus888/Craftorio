@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.IO;
 
 namespace Craftorio.Shared
 {
@@ -69,10 +70,11 @@ namespace Craftorio.Shared
             this.resourceFactoryManager = new ResourceFactoryManager();
             resourceManager.RegisterResource("Money");
             this.username = username;
-            CreateOrLoadPlayer();
+            CreatePlayer();
         }
-        public void CreateOrLoadPlayer()
+        public void CreatePlayer()
         {
+            //player is new
             resourceManager.AddResource("Money", 100);
             //Load ResourceFactories
             resourceFactoryManager.resourceFactories.Add(new ResourceFactory("Forest", 20, 1, 2));

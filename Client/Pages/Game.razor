@@ -51,13 +51,14 @@
     public string username { get; set; }
     private string sessionToken{ get; set; }
     private Player player = new Player();
+    private Session session;
     List<KeyValuePair<string, int>> resources = new List<KeyValuePair<string, int>>();
     protected async override Task OnInitializedAsync()
     {
         sessionToken = localStorage.GetItemAsString("session");
         sessionToken = sessionToken.Substring(1, sessionToken.Length - 2);
-        Session s = new Session(username, sessionToken);
-        HttpResponseMessage verifyRes = await http.PostAsJsonAsync("api/verify", s.ToString());
+        session = new Session(username, sessionToken);
+        HttpResponseMessage verifyRes = await http.PostAsJsonAsync("api/verify", session.ToString());
         if (verifyRes.IsSuccessStatusCode != true)
         {
             //forged cookie
@@ -66,15 +67,15 @@
         //Load player resources
         HttpResponseMessage playerRes = await http.PostAsJsonAsync("api/getPlayer", username);
         string playerStr = await playerRes.Content.ReadAsStringAsync();
-        var stream = new MemoryStream();
-        var writer = new StreamWriter(stream);
+        MemoryStream stream = new MemoryStream();
+        StreamWriter writer = new StreamWriter(stream);
         writer.Write(playerStr);
         writer.Flush();
         stream.Position = 0;
         XmlSerializer xml = new XmlSerializer(typeof(Player));
         player = (Player) xml.Deserialize(stream);
         resources = player.resourceManager.GetResourceAmountPairs();
-        //run func every second
+        //run tick every second
         Timer t = new System.Threading.Timer((e) =>
         {
             //make factories produce their stuff
@@ -84,6 +85,12 @@
             }
             StateHasChanged();
         }, null, TimeSpan.Zero, new TimeSpan(0,0,1));
+        //save every minute, and send keep-alive signal
+        Timer s = new Timer((e) =>
+        {
+            Save();
+            KeepAlive();
+        }, null, new TimeSpan(0,1,0), new TimeSpan(0,1,0));
         base.OnInitialized();
     }
     public void TryBuyUpgrade(ResourceFactory ResFactory)
@@ -93,7 +100,7 @@
         {
             player.resourceFactoryManager.resourceFactories.Find(x => x == ResFactory).amountBought++;
             player.resourceManager.ChangeResourceAmount("Money", MathOperation.Subtract, ResFactory.upgradeCost);
-            player.resourceFactoryManager.resourceFactories.Find(x => x == ResFactory).RaiseUpgradePrice(1.125);
+            player.resourceFactoryManager.resourceFactories.Find(x => x == ResFactory).RaiseUpgradePrice(1.25);
             player.resourceFactoryManager.RecalculateAll();
             StateHasChanged();
         }
@@ -103,9 +110,26 @@
         resources = player.resourceManager.GetResourceAmountPairs();
         return base.ShouldRender();
     }
+    public async void KeepAlive()
+    {
+        http.PutAsJsonAsync("api/keepAlive", session.ToString());
+    }
+    public async void Save()
+    {
+        //serializing xml
+        XmlSerializer xmlSerializer = new XmlSerializer(typeof(Player));
+        MemoryStream stream = new MemoryStream();
+        xmlSerializer.Serialize(stream, player);
+        StreamReader streamReader = new StreamReader(stream);
+        stream.Position = 0;
+        string playerStringified = streamReader.ReadToEnd();
+        string[] saveStr = { session.ToString(), playerStringified };
+        HttpResponseMessage resSave = await http.PostAsJsonAsync("api/saveProgress", saveStr);
+    }
     public async void Dispose()
     {
-        //send a req to ogout the player
-        HttpResponseMessage res = await http.PostAsJsonAsync("api/logout", new Session(username, sessionToken).ToString());
+        Save();
+        //send a req to logout the player
+        HttpResponseMessage res = await http.PostAsJsonAsync("api/logout", session.ToString());
     }
 }

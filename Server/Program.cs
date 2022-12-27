@@ -1,11 +1,18 @@
 using Craftorio.Server.Controllers;
 using Craftorio.Shared;
+using System.IO;
 using Microsoft.AspNetCore.ResponseCompression;
+
+//check for saved games folder
+if (!Directory.GetDirectories(Directory.GetCurrentDirectory()).Contains("SavedGames"))
+{
+    //folder doesnt exist, create one
+    Directory.CreateDirectory("./SavedGames/");
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
-
 builder.Services.AddSingleton<ISessionController, SessionController>();
 builder.Services.AddSingleton<IPlayerController, PlayerController>();
 builder.Services.AddControllersWithViews();

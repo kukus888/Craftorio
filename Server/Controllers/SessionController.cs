@@ -26,6 +26,11 @@ namespace Craftorio.Server.Controllers
         /// <param name="session"></param>
         /// <exception cref="InvalidDataException">Invalid Session</exception>
         void Logout(Session session);
+        /// <summary>
+        /// Pings the server, pleading to not dc
+        /// </summary>
+        /// <param name="session"></param>
+        void Ping(Session session);
     }
     /// <summary>
     /// Singleton responsible for session management
@@ -35,19 +40,43 @@ namespace Craftorio.Server.Controllers
         private readonly ILogger<SessionController> logger;
         protected SessionController Instance { get; }
         private List<Session> sessionList { get; }
+        /// <summary>
+        /// List with sessions and last pings, in UTC
+        /// </summary>
+        private List<SessionPing> lastPings { get; }
         public SessionController(ILogger<SessionController> logger)
         {
             if (Instance == null)
             {
                 Instance = this;
                 sessionList = new List<Session>();
+                lastPings = new List<SessionPing>();
+                //run timer for killing inactive sessions
+                Timer t = new Timer((e) =>
+                {
+                    for(int i = 0; i < lastPings.Count; i++)
+                    {
+                        SessionPing sessionPing = lastPings[i];
+                        if (DateTime.Compare(sessionPing.lastPing.AddMinutes(2.0), DateTime.Now) <= 0)
+                        {
+                            sessionList.Remove(sessionPing.session);
+                            lastPings.Remove(sessionPing);
+                            logger.LogInformation($"Session {sessionPing.session.ToString()} timed out");
+                            //session removed, other session is at this sessions index
+                            i--;
+                        }
+                    }
+                }, null, TimeSpan.Zero, new TimeSpan(0,2,0));
             }
             else
             {
                 //Singleton has already been created
             }
-
             this.logger = logger;
+        }
+        public void Ping(Session session)
+        {
+            lastPings.Find(x => x.session.ToString() == session.ToString()).lastPing = DateTime.UtcNow;
         }
         public string Create(Credentials credentials)
         {
@@ -85,6 +114,7 @@ namespace Craftorio.Server.Controllers
                     throw new DuplicateSessionException("Cannot initialize more than one session.");
                 }
             }
+            lastPings.Add(new SessionPing(session, DateTime.UtcNow));
             sessionList.Add(session);
             logger.Log(LogLevel.Debug, new EventId(), $"Logged in: {credentials.Username}");
             return shash;
@@ -116,6 +146,16 @@ namespace Craftorio.Server.Controllers
         public bool IsLogged(string sessionToken, string username)
         {
             return sessionList.Contains<Session>(new Session(username, sessionToken));
+        }
+        public class SessionPing
+        {
+            public readonly Session session;
+            public DateTime lastPing;
+            public SessionPing(Session session, DateTime lastPing)
+            {
+                this.session = session;
+                this.lastPing = lastPing;
+            }
         }
     }
     public static class ByteAdapter

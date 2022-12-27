@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Components;
 using System.Net;
 using System.Text.Json;
 using System.Xml.Serialization;
+using System.Numerics;
 
 namespace Craftorio.Server.Controllers
 {
@@ -32,10 +33,26 @@ namespace Craftorio.Server.Controllers
                 LoginDbConnector connector = new LoginDbConnector();
                 if (connector.Match(credentials))
                 {
+                    Player p;
                     //register session
                     string sessionToken = _sessionController.Create(credentials);
+                    //load player if has account
+                    string[] savedGames = Directory.GetFiles("./SavedGames/");
+                    if (savedGames.Contains("./SavedGames/" + credentials.Username))
+                    {
+                        //player has saved some things
+                        TextReader textReader = new StreamReader("./SavedGames/" + credentials.Username);
+                        XmlSerializer xmlSerializer = new XmlSerializer(typeof(Player));
+                        p = (Player) xmlSerializer.Deserialize(textReader);
+                        textReader.Close();
+                        textReader.Dispose();
+                    }
+                    else
+                    {
+                        p = new Player(credentials.Username);
+                    }
                     //register player
-                    _playerController.RegisterPlayer(new Player(credentials.Username));
+                    _playerController.RegisterPlayer(p);
                     return Content(sessionToken);
                 }
                 else
@@ -85,6 +102,11 @@ namespace Craftorio.Server.Controllers
                 return StatusCode(401);
             }
         }
+        /// <summary>
+        /// Gets player from the playerController
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns></returns>
         [HttpPost("getPlayer")]
         public ActionResult PostGetPlayer([FromBody]string username)
         {
@@ -98,16 +120,47 @@ namespace Craftorio.Server.Controllers
                 return StatusCode(404);
             }
             XmlSerializer xmlSerializer = new XmlSerializer(typeof(Player));
-            TextWriter s = new StreamWriter("playerStream.xml");
-            xmlSerializer.Serialize(s, p);
-            s.Close();
-            string[] playerStringifiedArr = System.IO.File.ReadAllLines("playerStream.xml");
-            string playerStringified = "";
-            for (int i = 0;i < playerStringifiedArr.Length;i++)
-            {
-                playerStringified += playerStringifiedArr[i];
-            }
+            MemoryStream stream = new MemoryStream();
+            xmlSerializer.Serialize(stream, p);
+            StreamReader streamReader = new StreamReader(stream);
+            stream.Position = 0;
+            string playerStringified = streamReader.ReadToEnd();
             return Ok(playerStringified);
+        }
+        [HttpPost("saveProgress")]
+        public void PostSaveProgress([FromBody] string[] s)
+        {
+            //verify user
+            Session session = new Session(s[0].Split(':')[0], s[0].Split(':')[1]);
+            if (_sessionController.IsLogged(session))
+            {
+                //user verified, get player data, in s[1]
+                MemoryStream stream = new MemoryStream();
+                TextWriter textWriter = new StreamWriter("./SavedGames/"+session.username);
+                textWriter.Write(s[1]);
+                textWriter.Flush();
+                textWriter.Dispose();
+                stream.Dispose();
+            }
+            else
+            {
+                //something is fishy
+            }
+        }
+        [HttpPut("keepAlive")]
+        public void PutKeepAlive([FromBody] string s)
+        {
+            //verify user
+            Session session = new Session(s.Split(':')[0], s.Split(':')[1]);
+            if (_sessionController.IsLogged(session))
+            {
+                _sessionController.Ping(session);
+                //user verified, keep him on the hook
+            }
+            else
+            {
+                //something is fishy, or player has lost connection for longer than 2m
+            }
         }
     }
 }
