@@ -26,10 +26,20 @@ namespace Craftorio.Shared
             this.sessionToken = _sessionToken;
         }
         [JsonConstructor]
-        public Session() { }
+        public Session() {
+            this.username = null;
+            this.sessionToken = null;
+        }
         public override string ToString()
         {
-            return $"{this.sessionToken}";
+            return $"{this.username}:{this.sessionToken}";
+        }
+        public override bool Equals(object? obj)
+        {
+            if (obj == null) return false;
+            Session s = obj as Session;
+            if(s.username == this.username && s.sessionToken == this.sessionToken) { return true; } else { return false; }
+            return base.Equals(obj);
         }
     }
     public class DuplicateSessionException : Exception

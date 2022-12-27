@@ -4,45 +4,93 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Serialization;
+using System.Net.Http;
+using System.Net.Http.Json;
 
 namespace Craftorio.Shared
 {
-    public class sPlayer
+    public interface IPlayerController
     {
-        public sPlayer Instance;
-        public sResourceManager resourceManager;
-        public string username;
-        public sPlayer(string username)
+        /// <summary>
+        /// Gets player's available money
+        /// </summary>
+        /// <returns></returns>
+        int GetMoney(string username);
+        /// <summary>
+        /// Registers a player, loading its state etc
+        /// </summary>
+        void RegisterPlayer(Player player);
+        Player GetPlayer(string username);
+    }
+    public class PlayerController : IPlayerController
+    {
+        protected PlayerController Instance { get; }
+        private List<Player> playerList { get; }
+        public PlayerController()
         {
-            if(this.Instance == null)
+            if (Instance == null)
             {
-                this.resourceManager = new sResourceManager();
-                resourceManager.RegisterResource("Money");
-                this.username = username;
-                this.Instance = this;
-                CreateOrLoadPlayer();
+                Instance = this;
+                playerList = new List<Player>();
+            }
+            else
+            {
+                //Singleton has already been created
             }
         }
-        public void Tick()
+        public void RegisterPlayer(Player player)
         {
-            //Money+=resourceManager.Tick();
+            playerList.Add(player);
+        }
+        public Player GetPlayer(string username)
+        {
+            return playerList.Find(x => x.username == username);
+        }
+        public int GetMoney(string username)
+        {
+            return playerList.Find(x => x.username == username).resourceManager.GetAmountOfResource("Money");
+        }
+    }
+    public class Player
+    {
+        public ResourceManager resourceManager;
+        public ResourceFactoryManager resourceFactoryManager;
+        public string username;
+        public Player()
+        {
+            this.resourceManager = new ResourceManager();
+            this.resourceFactoryManager = new ResourceFactoryManager();
+            this.username = null;
+        }
+        public Player(string username)
+        {
+            this.resourceManager = new ResourceManager();
+            this.resourceFactoryManager = new ResourceFactoryManager();
+            resourceManager.RegisterResource("Money");
+            this.username = username;
+            CreateOrLoadPlayer();
         }
         public void CreateOrLoadPlayer()
         {
-            this.Instance.resourceManager.AddResource("Money", 100);
+            resourceManager.AddResource("Money", 100);
+            //Load ResourceFactories
+            resourceFactoryManager.resourceFactories.Add(new ResourceFactory("Forest", 20, 1, 2));
+            resourceFactoryManager.resourceFactories.Add(new ResourceFactory("Sawmill", 100, 0, 10));
+            resourceFactoryManager.resourceFactories.Add(new ResourceFactory("Paper mill", 250, 0, 20));
+            resourceFactoryManager.resourceFactories.Add(new ResourceFactory("Furniture store", 1000, 0, 85));
+        }
+        public int GetMoney()
+        {
+            return resourceManager.GetAmountOfResource("Money");
         }
     }
-    public class sResourceManager
+    public class ResourceManager
     {
-        private List<Resource> resources;
-        public sResourceManager Instance;
-        public sResourceManager()
+        public List<Resource> resources;
+        public ResourceManager()
         {
-            if(Instance == null)
-            {
-                resources = new List<Resource>();
-                Instance = this;
-            }
+            resources = new List<Resource>();
         }
         public int Tick()
         {
@@ -60,7 +108,8 @@ namespace Craftorio.Shared
         public List<KeyValuePair<string,int>> GetResourceAmountPairs()
         {
             List<KeyValuePair<string,int>> keyValuePairs= new List<KeyValuePair<string,int>>();
-            foreach(Resource resource in Instance.resources)
+            if(resources == null || resources.Count == 0) { return keyValuePairs; }
+            foreach(Resource resource in resources)
             {
                 keyValuePairs.Add(new KeyValuePair<string,int>(resource.ResourceName, resource.Amount));
             }
@@ -71,23 +120,49 @@ namespace Craftorio.Shared
             Resource r = new Resource();
             r.ResourceName = resourceName;
             r.Amount = 0;
-            Instance.resources.Add(r);
+            resources.Add(r);
         }
         public void AddResource(string resourceName, int amount)
         {
             try
             {   
-                Instance.resources.Find(x => x.ResourceName == resourceName).Amount = amount;
+                resources.Find(x => x.ResourceName == resourceName).Amount = amount;
             }
             catch (ArgumentNullException ex)
             {
                 throw new UnknownResourceException($"Resource {resourceName} has not been registered.");
             }
         }
+        public void ChangeResourceAmount(string resourceName, MathOperation operation, int amount)
+        {
+            switch (operation)
+            {
+                case MathOperation.Add:
+                    resources.Find(x => x.ResourceName == resourceName).Amount += amount;
+                    break;
+                case MathOperation.Subtract:
+                    resources.Find(x => x.ResourceName == resourceName).Amount -= amount;
+                    break;
+                case MathOperation.Multiply:
+                    resources.Find(x => x.ResourceName == resourceName).Amount *= amount;
+                    break;
+                case MathOperation.Divide:
+                    resources.Find(x => x.ResourceName == resourceName).Amount /= amount;
+                    break;
+            }
+        }
+        public int GetAmountOfResource(string resourceName)
+        {
+            return resources.Find(x => x.ResourceName == resourceName).Amount;
+        }
         class UnknownResourceException : Exception
         {
             public UnknownResourceException(string message) { }
         }
+    }
+    public enum MathOperation
+    {
+        Add, Subtract, Multiply, Divide
     }
     public class Resource
     {
@@ -104,45 +179,69 @@ namespace Craftorio.Shared
 
         }
     }
+    public class ResourceFactoryManager
+    {
+        public List<ResourceFactory> resourceFactories;
+        public ResourceFactoryManager()
+        {
+            resourceFactories = new List<ResourceFactory>();
+        }
+        public void RegisterResourceFactory(ResourceFactory r)
+        {
+            resourceFactories.Add(r);
+        }
+        public void RecalculateAll()
+        {
+            foreach(ResourceFactory r in resourceFactories)
+            {
+                r.RecalculateGeneratingPerTick();
+            }
+        }
+    }
     public class ResourceFactory
     {
         /// <summary>
         /// What's this upgrades name
         /// </summary>
-        public string ResourceName { get; set; } = "";
+        public string resourceName { get; set; } = "";
         /// <summary>
         /// How much the upgrade costs
         /// </summary>
-        public int UpgradeCost { get; set; } = 0;
+        public int upgradeCost { get; set; } = 0;
         /// <summary>
         /// How many upgrades has player bought
         /// </summary>
-        public int AmountBought { get; set; } = 0;
+        public int amountBought { get; set; } = 0;
         /// <summary>
         /// Amount which this upgrade will generate each tick, for one upgrade
         /// </summary>
-        public int OneGeneratesPerTick { get; set; } = 0;
+        public int oneGeneratesPerTick { get; set; } = 0;
         /// <summary>
         /// How much this upgrade generates per tick, including multiples of this upgrade.
         /// </summary>
-        public int GeneratingPerTick { get; set; } = 0;
+        public int generatingPerTick { get; set; } = 0;
+        public ResourceFactory(string _resourceName, int _upgradeCost, int _amountBought, int _oneGeneratesPerTick)
+        {
+            this.resourceName = _resourceName;
+            this.upgradeCost = _upgradeCost;
+            this.amountBought = _amountBought;
+            this.oneGeneratesPerTick = _oneGeneratesPerTick;
+            RecalculateGeneratingPerTick();
+        }
         public ResourceFactory()
         {
-            throw new NotImplementedException();
+            this.resourceName = null;
+            this.upgradeCost = 0;
+            this.amountBought = 0;
+            this.oneGeneratesPerTick = 0;
         }
         public void RecalculateGeneratingPerTick()
         {
-            this.GeneratingPerTick = AmountBought * OneGeneratesPerTick;
+            this.generatingPerTick = amountBought * oneGeneratesPerTick;
         }
-        public void TryBuyUpgrade()
+        public void RaiseUpgradePrice(double upgradeCoefficient)
         {
-            sPlayer player = new sPlayer("");
-            /*if (player.Money >= UpgradeCost)
-            {
-                AmountBought++;
-                player.Money -= UpgradeCost;
-            }*/
-            RecalculateGeneratingPerTick();
+            this.upgradeCost = (int)(upgradeCoefficient * this.upgradeCost);
         }
     }
 }

@@ -2,9 +2,11 @@
 @using System.Net.Http.Json
 @using System.Threading
 @using Craftorio.Shared
+@using System.Xml.Serialization;
 @using System.Net
 @inject HttpClient http
 @inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
+@inject NavigationManager NavigationManager
 @implements IDisposable
 
 @page "/game/{Username}"
@@ -19,35 +21,91 @@
         </div>
     }
     <div class="d-inline-flex m-2 p-2 border border-2 border-secondary bg-secondary ml-auto text-end">
-        @Username
+        @username
     </div>
 </nav>
 <div class="container-fluid bg-dark text-white">
-    <!--<TileResourceGenerator resource=null></TileResourceGenerator>-->
+    @for(int i = 0; i < player.resourceFactoryManager.resourceFactories.Count; i++)
+    {
+        ResourceFactory r = player.resourceFactoryManager.resourceFactories[i];
+        <div class="d-flex flex-column bg-highlight mb-3 border border-1 py-1">
+            <div class="container d-flex flex-row">
+                <div class="flex-column">
+                    <h3 class="px-2">@player.resourceFactoryManager.resourceFactories[i].resourceName</h3>
+                    <div class="px-2">Generates @player.resourceFactoryManager.resourceFactories[i].oneGeneratesPerTick$ per tick</div>
+                </div>
+                <div class="d-flex align-content-center justify-content-end ms-auto">
+                    <button class="btn btn-primary m-2" @onclick="() => {TryBuyUpgrade(r);}">Upgrade for @player.resourceFactoryManager.resourceFactories[i].upgradeCost $</button>
+                </div>
+            </div>
+            <div class="container d-flex flex-row">
+                <div class="px-2">Amount: @player.resourceFactoryManager.resourceFactories[i].amountBought</div>
+                <div class="px-2">Generating: @player.resourceFactoryManager.resourceFactories[i].generatingPerTick $</div>
+            </div>
+        </div>
+    }
 </div>
 
 @code {
     [Parameter]
-    public string Username { get; set; }
+    public string username { get; set; }
     private string sessionToken{ get; set; }
+    private Player player = new Player();
     List<KeyValuePair<string, int>> resources = new List<KeyValuePair<string, int>>();
     protected async override Task OnInitializedAsync()
     {
         sessionToken = localStorage.GetItemAsString("session");
         sessionToken = sessionToken.Substring(1, sessionToken.Length - 2);
-        Session s = new Session(Username, sessionToken);
-        string username = Username + " " + sessionToken;
-        HttpResponseMessage res = await http.PostAsJsonAsync("api/verify", username);
-        //HttpResponseMessage res = await http.PostAsJsonAsync<Session>("api/verify", s);
-        string verifyRes = await res.Content.ReadAsStringAsync();
-        if (verifyRes != "OK")
+        Session s = new Session(username, sessionToken);
+        HttpResponseMessage verifyRes = await http.PostAsJsonAsync("api/verify", s.ToString());
+        if (verifyRes.IsSuccessStatusCode != true)
         {
-            Username += "[INVALID]";
+            //forged cookie
+            NavigationManager.NavigateTo("/");
         }
+        //Load player resources
+        HttpResponseMessage playerRes = await http.PostAsJsonAsync("api/getPlayer", username);
+        string playerStr = await playerRes.Content.ReadAsStringAsync();
+        var stream = new MemoryStream();
+        var writer = new StreamWriter(stream);
+        writer.Write(playerStr);
+        writer.Flush();
+        stream.Position = 0;
+        XmlSerializer xml = new XmlSerializer(typeof(Player));
+        player = (Player) xml.Deserialize(stream);
+        resources = player.resourceManager.GetResourceAmountPairs();
+        //run func every second
+        Timer t = new System.Threading.Timer((e) =>
+        {
+            //make factories produce their stuff
+            foreach (ResourceFactory r in player.resourceFactoryManager.resourceFactories)
+            {
+                player.resourceManager.ChangeResourceAmount("Money", MathOperation.Add, r.generatingPerTick);
+            }
+            StateHasChanged();
+        }, null, TimeSpan.Zero, new TimeSpan(0,0,1));
         base.OnInitialized();
+    }
+    public void TryBuyUpgrade(ResourceFactory ResFactory)
+    {
+        //check if user has enough money
+        if (player.GetMoney() >= ResFactory.upgradeCost)
+        {
+            player.resourceFactoryManager.resourceFactories.Find(x => x == ResFactory).amountBought++;
+            player.resourceManager.ChangeResourceAmount("Money", MathOperation.Subtract, ResFactory.upgradeCost);
+            player.resourceFactoryManager.resourceFactories.Find(x => x == ResFactory).RaiseUpgradePrice(1.125);
+            player.resourceFactoryManager.RecalculateAll();
+            StateHasChanged();
+        }
+    }
+    protected override bool ShouldRender()
+    {
+        resources = player.resourceManager.GetResourceAmountPairs();
+        return base.ShouldRender();
     }
     public async void Dispose()
     {
-        HttpResponseMessage res = await http.PostAsJsonAsync("api/logout", new Session(Username, sessionToken));
+        //send a req to ogout the player
+        HttpResponseMessage res = await http.PostAsJsonAsync("api/logout", new Session(username, sessionToken).ToString());
     }
 }

@@ -1,5 +1,6 @@
 using Blazored.LocalStorage;
 using Craftorio.Client;
+using Craftorio.Shared;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 

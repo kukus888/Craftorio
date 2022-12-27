@@ -1,23 +1,28 @@
 ﻿@using Craftorio.Shared;
+@inject HttpClient http;
 
-<div class="d-flex flex-column">
+<div class="d-flex flex-column bg-highlight mb-3 border border-1 py-1">
     <div class="container d-flex flex-row">
             <div class="flex-column">
-            <h3 class="px-2">@resource.ResourceName</h3>
-            <div>Generates @resource.OneGeneratesPerTick$ per tick</div>
+            <h3 class="px-2">@resource.resourceName</h3>
+            <div class="px-2">Generates @resource.oneGeneratesPerTick$ per tick</div>
         </div>
-        <div class="flex-column">
-            <button class="btn btn-primary" @onclick="resource.TryBuyUpgrade">Upgrade for @resource.UpgradeCost $</button>
+        <div class="d-flex align-content-center justify-content-end ms-auto">
+            <button class="btn btn-primary m-2" @onclick="TryBuyUpgrade">Upgrade for @resource.upgradeCost $</button>
         </div>
     </div>
-    <div class="container flex-row">
-        <h4>Amount: @resource.AmountBought</h4>
-        <h4>Generating: @resource.GeneratingPerTick</h4>
+    <div class="container d-flex flex-row">
+        <div class="px-2">Amount: @resource.amountBought</div>
+        <div class="px-2">Generating: @resource.generatingPerTick $</div>
     </div>
 </div>
 
 @code {
     [Parameter]
-    public ResourceFactory resource{ get; set; } = new ResourceFactory();
+    public ResourceFactory resource{ get; set; }
+    private void TryBuyUpgrade()
+    {
+        
+    }
 }
 

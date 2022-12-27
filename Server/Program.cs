@@ -7,6 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container.
 
 builder.Services.AddSingleton<ISessionController, SessionController>();
+builder.Services.AddSingleton<IPlayerController, PlayerController>();
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
 builder.Services.AddMvc();
