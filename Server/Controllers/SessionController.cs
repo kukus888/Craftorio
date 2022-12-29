@@ -57,7 +57,7 @@ namespace Craftorio.Server.Controllers
                     for(int i = 0; i < lastPings.Count; i++)
                     {
                         SessionPing sessionPing = lastPings[i];
-                        if (DateTime.Compare(sessionPing.lastPing.AddMinutes(2.0), DateTime.Now) <= 0)
+                        if (sessionPing.lastPing.AddMinutes(2.0).Ticks >= DateTime.Now.Ticks)
                         {
                             sessionList.Remove(sessionPing.session);
                             lastPings.Remove(sessionPing);

@@ -1,15 +1,1 @@
-[
-  {
-    "Username": "aaa",
-    "Password": "aaa"
-  },
-  {
-    "Username": "John Dow",
-    "Password": "Ahoy!"
-  },
-  {
-    "Username": "DoJohne",
-    "Password": "Ahoy!"
-  }
-]
-
+[{"Username":"aaa","Password":"aaa"},{"Username":"John Dow","Password":"Ahoy!"},{"Username":"DoJohne","Password":"Ahoy!"},{"Username":"bbb","Password":"bbb"},{"Username":"ccc","Password":"ccc"}]

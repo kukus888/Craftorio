@@ -4,11 +4,16 @@ using System.Text.Json;
 
 namespace Craftorio.Server.Controllers
 {
+    public interface ILoginDbConnector
+    {
+        public void Create(Credentials credentials);
+    }
     /// <summary>
     /// Singleton, used to access the Login Database
     /// </summary>
-    public class LoginDbConnector
+    public class LoginDbConnector:ILoginDbConnector
     {
+        private readonly string loginDbPath = "./logins.json";
         protected LoginDbConnector Instance { get; }
         private List<Credentials> localCredentials { get; }
         public LoginDbConnector()
@@ -30,7 +35,12 @@ namespace Craftorio.Server.Controllers
         /// <param name="credentials"></param>
         public void Create(Credentials credentials)
         {
-            throw new NotImplementedException();
+            localCredentials.Add(credentials);
+            string serializedLogins = JsonSerializer.Serialize<Credentials[]>(localCredentials.ToArray());
+            TextWriter tw = new StreamWriter(loginDbPath);
+            tw.Write(serializedLogins);
+            tw.Close();
+            tw.Dispose();
         }
         /// <summary>
         /// Looks for the credentials in the database
@@ -66,7 +76,7 @@ namespace Craftorio.Server.Controllers
         /// </summary>
         private void UpdateLocalMemory()
         {
-            FileStream fs = File.OpenRead("./logins.json");
+            FileStream fs = File.OpenRead(loginDbPath);
             Credentials[] storedCredentials = JsonSerializer.Deserialize<Credentials[]>(fs);
             fs.Close();
             fs.DisposeAsync();
@@ -75,6 +85,10 @@ namespace Craftorio.Server.Controllers
             {
                 localCredentials.Add(c);
             }
+        }
+        public bool UsernameExists(string username)
+        {
+            if (localCredentials.Exists(x => x.Username == username)) { return true; } else return false;
         }
     }
 }

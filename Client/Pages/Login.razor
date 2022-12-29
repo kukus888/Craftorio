@@ -9,25 +9,27 @@
 
 @page "/Login"
 
-<EditForm Model="@credentials" OnValidSubmit="login">
+<EditForm Model="@credentials" OnValidSubmit="login" class="d-inline-flex flex-column">
     <h3>Login</h3>
-    <p>
-        <label>Username</label>
-        <InputText @bind-Value="credentials.Username"></InputText>
-    </p>
-    <p>
-        <label>Password</label>
-        <InputText @bind-Value="credentials.Password" type="password"></InputText>
-    </p>
-    <p>
-        <button type="submit" class="btn">@loginBtnText</button>
+    <div class="d-flex flex-column">
+        <div class="d-flex flex-row align-items-center justify-content-between mb-1">
+            <label class="form-label me-2 my-auto">Username</label>
+            <InputText @bind-Value="credentials.Username" class="input-group-lg"></InputText>
+        </div>
+        <div class="d-flex flex-row align-items-center justify-content-between mb-1">
+            <label class="form-label me-2 my-auto">Password</label>
+            <InputText @bind-Value="credentials.Password" type="password" class="input-group-lg"></InputText>
+        </div>
+    </div>
+    <p class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary">@loginBtnText</button>
     </p>
 </EditForm>
 <p hidden=@hideLoginErrMsg class="text-warning">
     @loginErrorMsg
 </p>
 <p>
-    This website uses cookies.
+    Does not have an account? Register <a @onclick='()=>{NavigationManager.NavigateTo("/Register", false);}' class="link-info">here.</a>
 </p>
 
 

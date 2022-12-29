@@ -19,19 +19,20 @@ namespace Craftorio.Server.Controllers
         private readonly ISessionController _sessionController;
         private readonly IPlayerController _playerController;
         private readonly ILogger<APIcontroller> _logger;
-        public APIcontroller(ILogger<APIcontroller> logger, ISessionController sessionController, IPlayerController playerController)
+        private LoginDbConnector _loginDbConnector;
+        public APIcontroller(ILogger<APIcontroller> logger, ISessionController sessionController, IPlayerController playerController, LoginDbConnector loginDbConnector)
         {
             _logger = logger;
             _sessionController = sessionController;
             _playerController = playerController;
+            _loginDbConnector = loginDbConnector;
         }
         [HttpPost("login")]
-        public ActionResult Post(Credentials credentials)
+        public ActionResult PostLogin(Credentials credentials)
         {
             try
             {
-                LoginDbConnector connector = new LoginDbConnector();
-                if (connector.Match(credentials))
+                if (_loginDbConnector.Match(credentials))
                 {
                     Player p;
                     //register session
@@ -160,6 +161,29 @@ namespace Craftorio.Server.Controllers
             else
             {
                 //something is fishy, or player has lost connection for longer than 2m
+            }
+        }
+        [HttpPost("register")]
+        public ActionResult PostRegister([FromBody] Credentials c)
+        {
+            //check if username is taken
+            if (_loginDbConnector.UsernameExists(c.Username))
+            {
+                //username exists, cannot create user
+                return StatusCode(406, "Username is already taken!");
+            }
+            else
+            {
+                //username is free
+                //register user
+                _loginDbConnector.Create(c);
+                //send res with 200 and sessionToken, redirect to login page
+                //register session
+                string sessionToken = _sessionController.Create(c);
+                Player p = new Player(c.Username);
+                //register player
+                _playerController.RegisterPlayer(p);
+                return Ok(sessionToken);
             }
         }
     }

@@ -1,0 +1,55 @@
+﻿@using Craftorio.Shared
+@inject HttpClient http
+@inject Blazored.LocalStorage.ISyncLocalStorageService localStorage
+@inject NavigationManager NavigationManager
+
+@page "/Register"
+
+<h3>Register</h3>
+<EditForm Model="@credentials" OnValidSubmit="RegisterUser" class="d-inline-flex flex-column">
+    <div class="d-flex flex-column">
+        <div class="d-flex flex-row align-items-center justify-content-between">
+            <label class="form-label me-2">Username</label>
+            <InputText @bind-Value="credentials.Username" class="input-group-lg"></InputText>
+        </div>
+        <div class="d-flex flex-row align-items-center justify-content-between">
+            <label class="form-label me-2">Password</label>
+            <InputText @bind-Value="credentials.Password" type="password" class="input-group-lg"></InputText>
+        </div>
+    </div>
+    <p class="d-flex justify-content-end">
+        <button type="submit" class="btn btn-primary">@textBtnRegister</button>
+    </p>
+</EditForm>
+<p hidden=@hideErrMsg class="text-warning">
+    @errorMsg
+</p>
+
+@code {
+    private bool hideErrMsg = true;
+    private string errorMsg = "";
+    private string textBtnRegister = "Register";
+    private Credentials credentials = Credentials.NullCredentials();
+    private async void RegisterUser(){
+        textBtnRegister = "Registering...";
+        HttpResponseMessage res = await http.PostAsJsonAsync("api/register", credentials);
+        if(res.StatusCode == System.Net.HttpStatusCode.OK)
+        {
+            //user registered
+            textBtnRegister = "Registered!";
+            //save sessionstring
+            string sessionString = await res.Content.ReadAsStringAsync();
+            localStorage.SetItem("session", sessionString);
+            //navigate to game
+            NavigationManager.NavigateTo("/game/" + credentials.Username);
+        }
+        else if(res.StatusCode == System.Net.HttpStatusCode.NotAcceptable)
+        {
+            //user exists
+            errorMsg = await res.Content.ReadAsStringAsync();
+            hideErrMsg = false;
+            textBtnRegister = "Register";
+        }
+        StateHasChanged();
+    }
+}

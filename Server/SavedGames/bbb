@@ -4,7 +4,7 @@
     <resources>
       <Resource>
         <ResourceName>Money</ResourceName>
-        <Amount>30997</Amount>
+        <Amount>122364</Amount>
       </Resource>
     </resources>
   </resourceManager>
@@ -12,33 +12,33 @@
     <resourceFactories>
       <ResourceFactory>
         <resourceName>Forest</resourceName>
-        <upgradeCost>45902</upgradeCost>
-        <amountBought>36</amountBought>
+        <upgradeCost>1035</upgradeCost>
+        <amountBought>19</amountBought>
         <oneGeneratesPerTick>2</oneGeneratesPerTick>
-        <generatingPerTick>72</generatingPerTick>
+        <generatingPerTick>38</generatingPerTick>
       </ResourceFactory>
       <ResourceFactory>
         <resourceName>Sawmill</resourceName>
-        <upgradeCost>63783</upgradeCost>
-        <amountBought>29</amountBought>
+        <upgradeCost>1438</upgradeCost>
+        <amountBought>12</amountBought>
         <oneGeneratesPerTick>10</oneGeneratesPerTick>
-        <generatingPerTick>290</generatingPerTick>
+        <generatingPerTick>120</generatingPerTick>
       </ResourceFactory>
       <ResourceFactory>
         <resourceName>Paper mill</resourceName>
-        <upgradeCost>128481</upgradeCost>
-        <amountBought>28</amountBought>
+        <upgradeCost>3618</upgradeCost>
+        <amountBought>12</amountBought>
         <oneGeneratesPerTick>20</oneGeneratesPerTick>
-        <generatingPerTick>560</generatingPerTick>
+        <generatingPerTick>240</generatingPerTick>
       </ResourceFactory>
       <ResourceFactory>
         <resourceName>Furniture store</resourceName>
-        <upgradeCost>211565</upgradeCost>
-        <amountBought>24</amountBought>
+        <upgradeCost>135402</upgradeCost>
+        <amountBought>22</amountBought>
         <oneGeneratesPerTick>85</oneGeneratesPerTick>
-        <generatingPerTick>2040</generatingPerTick>
+        <generatingPerTick>1870</generatingPerTick>
       </ResourceFactory>
     </resourceFactories>
   </resourceFactoryManager>
-  <username>aaa</username>
+  <username>bbb</username>
 </Player>

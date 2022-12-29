@@ -13,15 +13,18 @@
 
 <h3>Game</h3>
 
-<nav class="d-flex flex-row bg-dark text-white">
+<nav class="d-flex flex-row bg-dark text-white px-1">
     @foreach(KeyValuePair<string,int> resource in resources)
     {
-        <div class="d-flex btn-outline-info">
+        <div class="d-inline-flex m-2 p-2 border border-2 border-info bg-dark ml-auto text-end align-items-center me-auto">
             @resource.Key: @resource.Value
         </div>
     }
-    <div class="d-inline-flex m-2 p-2 border border-2 border-secondary bg-secondary ml-auto text-end">
+    <div class="d-inline-flex m-2 p-2 border border-2 border-info bg-dark ml-auto text-end align-items-center">
         @username
+    </div>
+    <div class="d-inline-flex m-2 p-2 border border-2 border-info bg-dark ml-auto text-end align-items-center">
+        <button class="btn btn-primary" @onclick="Save">Save</button>
     </div>
 </nav>
 <div class="container-fluid bg-dark text-white">
@@ -114,7 +117,7 @@
     {
         http.PutAsJsonAsync("api/keepAlive", session.ToString());
     }
-    public async void Save()
+    public async Task<bool> Save()
     {
         //serializing xml
         XmlSerializer xmlSerializer = new XmlSerializer(typeof(Player));
@@ -125,10 +128,11 @@
         string playerStringified = streamReader.ReadToEnd();
         string[] saveStr = { session.ToString(), playerStringified };
         HttpResponseMessage resSave = await http.PostAsJsonAsync("api/saveProgress", saveStr);
+        return resSave.IsSuccessStatusCode;
     }
     public async void Dispose()
     {
-        Save();
+        await Save();
         //send a req to logout the player
         HttpResponseMessage res = await http.PostAsJsonAsync("api/logout", session.ToString());
     }
